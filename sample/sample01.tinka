@@ -1,0 +1,14 @@
+-- グローバル変数と演算子の結合の優先順位
+anax p el 4
+
+cersva fasal ()
+rinyv
+    anax v el 9
+
+    -- 演算子には結合の優先順位が存在する
+    -- el/eksaが最も低く，関数呼び出しが最も高い．
+    -- 下の場合には"((#v + (nac #p)) clo 5) eksa #p"となる
+    #v + nac #p clo 5 eksa #p
+    dosnud 0
+situv
+
