@@ -225,6 +225,114 @@ namespace Tinka.Translator
             this.writer.WriteLine("latsna f1 f0 f0 ; f0 latsna f1");
         }
 
+        protected override void ToAda(ExpressionNode left, ExpressionNode right, IDictionary<IdentifierNode, uint> anaxDictionary)
+        {
+            OutputExpression(left, "f0", anaxDictionary);
+            if (right is IdentifierNode || right is ConstantNode)
+            {
+                OutputValue(right, "f1", anaxDictionary);
+            }
+            else
+            {
+                this.writer.WriteLine("nta 4 f5 krz f0 f5@");
+                OutputExpression(right, "f0", anaxDictionary);
+                this.writer.WriteLine("krz f0 f1 krz f5@ f0 ata 4 f5");
+            }
+            this.writer.WriteLine("ada f1 f0 ; f0 ada f1");
+        }
+
+        protected override void ToEkc(ExpressionNode left, ExpressionNode right, IDictionary<IdentifierNode, uint> anaxDictionary)
+        {
+            OutputExpression(left, "f0", anaxDictionary);
+            if (right is IdentifierNode || right is ConstantNode)
+            {
+                OutputValue(right, "f1", anaxDictionary);
+            }
+            else
+            {
+                this.writer.WriteLine("nta 4 f5 krz f0 f5@");
+                OutputExpression(right, "f0", anaxDictionary);
+                this.writer.WriteLine("krz f0 f1 krz f5@ f0 ata 4 f5");
+            }
+            this.writer.WriteLine("ekc f1 f0 ; f0 ekc f1");
+        }
+
+        protected override void ToDal(ExpressionNode left, ExpressionNode right, IDictionary<IdentifierNode, uint> anaxDictionary)
+        {
+            OutputExpression(left, "f0", anaxDictionary);
+            if (right is IdentifierNode || right is ConstantNode)
+            {
+                OutputValue(right, "f1", anaxDictionary);
+            }
+            else
+            {
+                this.writer.WriteLine("nta 4 f5 krz f0 f5@");
+                OutputExpression(right, "f0", anaxDictionary);
+                this.writer.WriteLine("krz f0 f1 krz f5@ f0 ata 4 f5");
+            }
+            this.writer.WriteLine("dal f1 f0 ; f0 dal f1");
+        }
+
+        protected override void ToSna(ExpressionNode value, IDictionary<IdentifierNode, uint> anaxDictionary)
+        {
+            OutputExpression(value, "f0", anaxDictionary);
+            this.writer.WriteLine("dal 0 f0 ata 1 f0 ; sna f0");
+        }
+
+        protected override void ToNac(ExpressionNode value, IDictionary<IdentifierNode, uint> anaxDictionary)
+        {
+            OutputExpression(value, "f0", anaxDictionary);
+            this.writer.WriteLine("dal 0 f0 ; nac f0");
+        }
+
+        protected override void ToDto(ExpressionNode left, ExpressionNode right, IDictionary<IdentifierNode, uint> anaxDictionary)
+        {
+            OutputExpression(left, "f0", anaxDictionary);
+            if (right is IdentifierNode || right is ConstantNode)
+            {
+                OutputValue(right, "f1", anaxDictionary);
+            }
+            else
+            {
+                this.writer.WriteLine("nta 4 f5 krz f0 f5@");
+                OutputExpression(right, "f0", anaxDictionary);
+                this.writer.WriteLine("krz f0 f1 krz f5@ f0 ata 4 f5");
+            }
+            this.writer.WriteLine("dto f1 f0 ; f0 dto f1");
+        }
+
+        protected override void ToDro(ExpressionNode left, ExpressionNode right, IDictionary<IdentifierNode, uint> anaxDictionary)
+        {
+            OutputExpression(left, "f0", anaxDictionary);
+            if (right is IdentifierNode || right is ConstantNode)
+            {
+                OutputValue(right, "f1", anaxDictionary);
+            }
+            else
+            {
+                this.writer.WriteLine("nta 4 f5 krz f0 f5@");
+                OutputExpression(right, "f0", anaxDictionary);
+                this.writer.WriteLine("krz f0 f1 krz f5@ f0 ata 4 f5");
+            }
+            this.writer.WriteLine("dro f1 f0 ; f0 dro f1");
+        }
+
+        protected override void ToDtosna(ExpressionNode left, ExpressionNode right, IDictionary<IdentifierNode, uint> anaxDictionary)
+        {
+            OutputExpression(left, "f0", anaxDictionary);
+            if (right is IdentifierNode || right is ConstantNode)
+            {
+                OutputValue(right, "f1", anaxDictionary);
+            }
+            else
+            {
+                this.writer.WriteLine("nta 4 f5 krz f0 f5@");
+                OutputExpression(right, "f0", anaxDictionary);
+                this.writer.WriteLine("krz f0 f1 krz f5@ f0 ata 4 f5");
+            }
+            this.writer.WriteLine("dtosna f1 f0 ; f0 dtosna f1");
+        }
+
         protected override void ToCompare(TokenType type, ExpressionNode left, ExpressionNode right, IDictionary<IdentifierNode, uint> anaxDictionary)
         {
             string op;
@@ -280,24 +388,12 @@ namespace Tinka.Translator
             this.writer.WriteLine("krz f5@ f0 ata 4 f5");
         }
 
-        protected override void ToSna(ExpressionNode value, IDictionary<IdentifierNode, uint> anaxDictionary)
-        {
-            OutputExpression(value, "f0", anaxDictionary);
-            this.writer.WriteLine("dal 0 f0 ata 1 f0 ; sna f0");
-        }
-
-        protected override void ToNac(ExpressionNode value, IDictionary<IdentifierNode, uint> anaxDictionary)
-        {
-            OutputExpression(value, "f0", anaxDictionary);
-            this.writer.WriteLine("dal 0 f0 ; nac f0");
-        }
-
         protected override void ToConstant(ConstantNode constant, string register)
         {
             this.writer.WriteLine("krz {0} {1} ; {0}", constant.Value, register);
         }
 
-        protected override void ToIdentifier(IdentifierNode identifier, string register, IDictionary<IdentifierNode, uint> anaxDictionary)
+        protected override void ToVariable(IdentifierNode identifier, string register, IDictionary<IdentifierNode, uint> anaxDictionary)
         {
             if(anaxDictionary != null && anaxDictionary.ContainsKey(identifier))
             {
@@ -312,5 +408,23 @@ namespace Tinka.Translator
                 throw new ApplicationException($"Not found variable name : #{identifier.Value}");
             }
         }
+
+        protected override void ToFenxe(FenxeNode fenxe, string register, IDictionary<IdentifierNode, uint> anaxDictionary)
+        {
+            int count = ((fenxe.Arguments?.Count ?? 0) + 1) * 4;
+            // TODO: Argumentsの前処理を行う
+            
+            if(register != "f0")
+            {
+                this.writer.WriteLine("nta 4 f5 krz f0 f5@");
+            }
+
+            this.writer.WriteLine("nta 4 f5 inj {0} xx f5@ ata {1} f5", fenxe.Name.Value, count);
+            if(register != "f0")
+            {
+                this.writer.WriteLine("krz f0 {0} krz f5@ f0 ata 4 f5", register);
+            }
+        }
+
     }
 }

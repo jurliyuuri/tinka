@@ -20,7 +20,7 @@ namespace Tinka.Translator
 
         R_CIRC,
         L_CIRC,
-        NUMBER_SIGN,
+        VARIABLE_SIGN,
         COMMA,
         COLON,
 

@@ -156,8 +156,13 @@ namespace Tinka.Translator
                     case TokenType.KAKSNA:
                         break;
                     case TokenType.ADA:
+                        ToAda(biop.Left, biop.Right, anaxDictionary);
+                        break;
                     case TokenType.EKC:
+                        ToEkc(biop.Left, biop.Right, anaxDictionary);
+                        break;
                     case TokenType.DAL:
+                        ToDal(biop.Left, biop.Right, anaxDictionary);
                         break;
                     case TokenType.XTLO:
                     case TokenType.XYLO:
@@ -172,15 +177,21 @@ namespace Tinka.Translator
                         ToCompare(biop.Operator, biop.Left, biop.Right, anaxDictionary);
                         break;
                     case TokenType.DTO:
+                        ToDto(biop.Left, biop.Right, anaxDictionary);
+                        break;
                     case TokenType.DRO:
+                        ToDro(biop.Left, biop.Right, anaxDictionary);
+                        break;
                     case TokenType.DTOSNA:
+                        ToDtosna(biop.Left, biop.Right, anaxDictionary);
+                        break;
                     default:
                         throw new ApplicationException($"Unknown BiOperandNode: {biop.Operator}");
                 }
             }
             else if (expression is IdentifierNode)
             {
-                ToIdentifier(expression as IdentifierNode, register, anaxDictionary);
+                ToVariable(expression as IdentifierNode, register, anaxDictionary);
             }
             else if (expression is ConstantNode)
             {
@@ -196,7 +207,7 @@ namespace Tinka.Translator
         {
             if (expression is IdentifierNode)
             {
-                ToIdentifier(expression as IdentifierNode, register, anaxDictionary);
+                ToVariable(expression as IdentifierNode, register, anaxDictionary);
             }
             else if (expression is ConstantNode)
             {
@@ -232,15 +243,29 @@ namespace Tinka.Translator
 
         protected abstract void ToLatsna(ExpressionNode left, ExpressionNode right, IDictionary<IdentifierNode, uint> anaxDictionary);
 
+        protected abstract void ToAda(ExpressionNode left, ExpressionNode right, IDictionary<IdentifierNode, uint> anaxDictionary);
+
+        protected abstract void ToEkc(ExpressionNode left, ExpressionNode right, IDictionary<IdentifierNode, uint> anaxDictionary);
+
+        protected abstract void ToDal(ExpressionNode left, ExpressionNode right, IDictionary<IdentifierNode, uint> anaxDictionary);
+
         protected abstract void ToSna(ExpressionNode value, IDictionary<IdentifierNode, uint> anaxDictionary);
 
         protected abstract void ToNac(ExpressionNode value, IDictionary<IdentifierNode, uint> anaxDictionary);
+
+        protected abstract void ToDto(ExpressionNode left, ExpressionNode right, IDictionary<IdentifierNode, uint> anaxDictionary);
+
+        protected abstract void ToDro(ExpressionNode left, ExpressionNode right, IDictionary<IdentifierNode, uint> anaxDictionary);
+
+        protected abstract void ToDtosna(ExpressionNode left, ExpressionNode right, IDictionary<IdentifierNode, uint> anaxDictionary);
 
         protected abstract void ToCompare(TokenType type, ExpressionNode left, ExpressionNode right, IDictionary<IdentifierNode, uint> anaxDictionary);
 
         protected abstract void ToConstant(ConstantNode constant, string register);
 
-        protected abstract void ToIdentifier(IdentifierNode identifier, string register, IDictionary<IdentifierNode, uint> anaxDictionary);
+        protected abstract void ToVariable(IdentifierNode identifier, string register, IDictionary<IdentifierNode, uint> anaxDictionary);
+
+        protected abstract void ToFenxe(FenxeNode fenxe, string register, IDictionary<IdentifierNode, uint> anaxDictionary);
 
         #region Splitter
 
@@ -353,7 +378,7 @@ namespace Tinka.Translator
                     case "#":
                         tokens.Add(new Token
                         {
-                            Type = TokenType.NUMBER_SIGN,
+                            Type = TokenType.VARIABLE_SIGN,
                         });
                         break;
                     case ",":
@@ -710,7 +735,7 @@ namespace Tinka.Translator
 
         ExpressionNode GetCompareNode(IList<Token> tokens, ref int index)
         {
-            ExpressionNode node = GetExpressionNode(tokens, ref index);
+            ExpressionNode node = GetBitOperatorNode(tokens, ref index);
             int count = tokens.Count;
 
             while (index < count)
@@ -729,6 +754,89 @@ namespace Tinka.Translator
                     case TokenType.XYLONYS:
                     case TokenType.LLONYS:
                     case TokenType.XOLONYS:
+                        index++;
+                        {
+                            var op = new BiOperatorNode
+                            {
+                                Operator = token.Type,
+                                Left = node,
+                                Right = GetBitOperatorNode(tokens, ref index),
+                            };
+
+                            if (op.Right == null || (op.Left == null && op.Right != null))
+                            {
+                                throw new ApplicationException($"Invalid arguments: {token.Type}(Left: {op.Left}, Right: {op.Right})");
+                            }
+                            else
+                            {
+                                node = op;
+                            }
+                        }
+                        break;
+                    default:
+                        return node;
+                }
+            }
+
+            return node;
+        }
+
+        private ExpressionNode GetBitOperatorNode(IList<Token> tokens, ref int index)
+        {
+            ExpressionNode node = GetShiftNode(tokens, ref index);
+            int count = tokens.Count;
+
+            while (index < count)
+            {
+                Token token = tokens[index];
+
+                switch (token.Type)
+                {
+                    case TokenType.DTO:
+                    case TokenType.DTOSNA:
+                    case TokenType.DRO:
+                        index++;
+                        {
+                            var op = new BiOperatorNode
+                            {
+                                Operator = token.Type,
+                                Left = node,
+                                Right = GetShiftNode(tokens, ref index),
+                            };
+
+                            if (op.Right == null || (op.Left == null && op.Right != null))
+                            {
+                                throw new ApplicationException($"Invalid arguments: {token.Type}(Left: {op.Left}, Right: {op.Right})");
+                            }
+                            else
+                            {
+                                node = op;
+                            }
+                        }
+                        break;
+                    default:
+                        return node;
+                }
+            }
+
+            return node;
+        }
+
+
+        private ExpressionNode GetShiftNode(IList<Token> tokens, ref int index)
+        {
+            ExpressionNode node = GetExpressionNode(tokens, ref index);
+            int count = tokens.Count;
+
+            while (index < count)
+            {
+                Token token = tokens[index];
+
+                switch (token.Type)
+                {
+                    case TokenType.DTO:
+                    case TokenType.DTOSNA:
+                    case TokenType.DRO:
                         index++;
                         {
                             var op = new BiOperatorNode
@@ -869,7 +977,7 @@ namespace Tinka.Translator
                         }
                         break;
                     case TokenType.INTEGER:
-                    case TokenType.NUMBER_SIGN:
+                    case TokenType.VARIABLE_SIGN:
                     case TokenType.IDENTIFIER:
                         if(node is null)
                         {
@@ -901,7 +1009,7 @@ namespace Tinka.Translator
                         Value = (token as Integer).Value,
                     };
                     break;
-                case TokenType.NUMBER_SIGN:
+                case TokenType.VARIABLE_SIGN:
                     token = tokens[++index];
                     if(token is Identifier)
                     {
