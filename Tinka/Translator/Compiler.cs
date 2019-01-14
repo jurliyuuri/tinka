@@ -67,7 +67,8 @@ namespace Tinka.Translator
         {
             Preprocess(stream);
 
-            foreach (var node in this.nodes)
+            // AnaxNodeはPreprocess内で領域の確保等を行うため不要
+            foreach (var node in this.nodes.Where(x => !(x is AnaxNode)))
             {
                 if (node is XokNode)
                 {
@@ -76,10 +77,6 @@ namespace Tinka.Translator
                 else if (node is KueNode)
                 {
                     ToKue(node as KueNode);
-                }
-                else if (node is AnaxNode)
-                {
-                    // do nothing
                 }
                 else if (node is CersvaNode)
                 {
@@ -96,15 +93,12 @@ namespace Tinka.Translator
 
         protected void OutputSyntax(IList<SyntaxNode> expressions, IDictionary<IdentifierNode, uint> anaxDictionary)
         {
-            foreach (var node in expressions)
+            // AnaxNodeはToCersva内で領域の確保等を行うため不要
+            foreach (var node in expressions.Where(x => !(x is AnaxNode)))
             {
                 if (node is DosnudNode)
                 {
                     ToDosnud(node as DosnudNode, anaxDictionary);
-                }
-                else if (node is AnaxNode)
-                {
-                    // do nothing
                 }
                 else if (node is ElNode)
                 {
