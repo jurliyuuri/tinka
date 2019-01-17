@@ -100,6 +100,18 @@ namespace Tinka.Translator
                 {
                     ToDosnud(node as DosnudNode, anaxDictionary);
                 }
+                else if (node is FiNode)
+                {
+                    // TODO: スコープ内変数の領域を確保する
+                    ToFi(node as FiNode, anaxDictionary);
+                    // TODO: スコープ内変数を領域を解放する
+                }
+                else if (node is FalNode)
+                {
+                    // TODO: スコープ内変数の領域を確保する
+                    ToFal(node as FalNode, anaxDictionary);
+                    // TODO: スコープ内変数を領域を解放する
+                }
                 else if (node is ElNode)
                 {
                     var biop = node as ElNode;
@@ -140,6 +152,9 @@ namespace Tinka.Translator
                 var biop = expression as BiOperatorNode;
                 switch (biop.Operator)
                 {
+                    case TokenType.ARRAY_SIGN:
+                        ToArrayPos(biop.Left, biop.Right, anaxDictionary);
+                        break;
                     case TokenType.ATA:
                         ToAta(biop.Left, biop.Right, anaxDictionary);
                         break;
@@ -231,9 +246,13 @@ namespace Tinka.Translator
 
         protected abstract void ToAnax(AnaxNode node, IDictionary<IdentifierNode, uint> anaxDictionary);
 
-        protected abstract void ToEl(IdentifierNode left, ExpressionNode right, IDictionary<IdentifierNode, uint> anaxDictionary);
+        protected abstract void ToFi(FiNode node, IDictionary<IdentifierNode, uint> anaxDictionary);
 
-        protected abstract void ToEksa(ExpressionNode left, IdentifierNode right, IDictionary<IdentifierNode, uint> anaxDictionary);
+        protected abstract void ToFal(FalNode node, IDictionary<IdentifierNode, uint> anaxDictionary);
+
+        protected abstract void ToEl(ExpressionNode left, ExpressionNode right, IDictionary<IdentifierNode, uint> anaxDictionary);
+
+        protected abstract void ToEksa(ExpressionNode left, ExpressionNode right, IDictionary<IdentifierNode, uint> anaxDictionary);
 
         protected abstract void ToAta(ExpressionNode left, ExpressionNode right, IDictionary<IdentifierNode, uint> anaxDictionary);
 
@@ -260,6 +279,8 @@ namespace Tinka.Translator
         protected abstract void ToDtosna(ExpressionNode left, ExpressionNode right, IDictionary<IdentifierNode, uint> anaxDictionary);
 
         protected abstract void ToCompare(TokenType type, ExpressionNode left, ExpressionNode right, IDictionary<IdentifierNode, uint> anaxDictionary);
+
+        protected abstract void ToArrayPos(ExpressionNode left, ExpressionNode right, IDictionary<IdentifierNode, uint> anaxDictionary);
 
         protected abstract void ToConstant(ConstantNode constant, string register);
 
@@ -303,9 +324,10 @@ namespace Tinka.Translator
                     }
                     else
                     {
-                        buffer.Append('-').Append(token);
+                        buffer.Append('-');
                     }
                 }
+
                 if(char.IsWhiteSpace((char)token))
                 {
                     AppendToken();
@@ -390,7 +412,7 @@ namespace Tinka.Translator
                     case ":":
                         tokens.Add(new Token
                         {
-                            Type = TokenType.COLON,
+                            Type = TokenType.ARRAY_SIGN,
                         });
                         break;
                     case "+":
@@ -621,21 +643,76 @@ namespace Tinka.Translator
             }
 
             index++;
-
-            ExpressionNode node = null;
-            if (index < count)
+            if(index < count && tokens[index].Type == TokenType.ARRAY_SIGN)
             {
-                token = tokens[index];
-                if (token.Type == TokenType.EL)
+                index++;
+
+                ExpressionNode node = GetValueNode(tokens, ref index);
+
+                if(node is ConstantNode)
                 {
-                    index++;
-                    node = GetCompareNode(tokens, ref index);
+                    anaxNode.Length = node as ConstantNode;
+                }
+                else
+                {
+                    throw new ApplicationException("Array length is only constant value");
                 }
             }
 
-            anaxNode.Expression = node;
+            if (index < count && tokens[index].Type == TokenType.EL)
+            {
+                index++;
+                anaxNode.Expression = GetCompareNode(tokens, ref index);
+            }
 
             return anaxNode;
+        }
+
+        ControlNode GetControlNode(IList<Token> tokens, ref int index)
+        {
+            ControlNode controlNode;
+            Token token = tokens[index++];
+            int count = tokens.Count;
+
+            switch(token.Type)
+            {
+                case TokenType.FI:
+                    controlNode = new FiNode();
+                    break;
+                case TokenType.FAL:
+                    controlNode = new FalNode();
+                    break;
+                default:
+                    throw new ApplicationException($"Invalid token: {tokens}");
+            }
+
+            if (index >= count)
+            {
+                throw new ApplicationException("End of code in fi syntax");
+            }
+
+            controlNode.CompareExpression = GetCompareNode(tokens, ref index);
+            if (controlNode.CompareExpression == null)
+            {
+                throw new ApplicationException("Not found compare expression");
+            }
+
+            token = tokens[index];
+            if (token.Type != TokenType.RINYV)
+            {
+                throw new ApplicationException($"Not found 'rinyv': fi {controlNode.CompareExpression}");
+            }
+
+            index++;
+            controlNode.Syntaxes = GetSyntaxNode(tokens, ref index);
+
+            token = tokens[index];
+            if (token.Type != TokenType.SITUV)
+            {
+                throw new ApplicationException($"Not found 'situv': fi {controlNode.CompareExpression}");
+            }
+
+            return controlNode;
         }
 
         private IList<SyntaxNode> GetSyntaxNode(IList<Token> tokens, ref int index)
@@ -650,8 +727,6 @@ namespace Tinka.Translator
 
                 switch (token.Type)
                 {
-                    case TokenType.SITUV:
-                        return nodes;
                     case TokenType.DOSNUD:
                         index++;
                         node = GetCompareNode(tokens, ref index);
@@ -670,6 +745,13 @@ namespace Tinka.Translator
                         index++;
                         node = GetAnaxNode(tokens, ref index);
                         break;
+                    case TokenType.FI:
+                    case TokenType.FAL:
+                        node = GetControlNode(tokens, ref index);
+                        break;
+                    case TokenType.RINYV:
+                    case TokenType.SITUV:
+                        return nodes;
                     default:
                         node = GetEksaNode(tokens, ref index);
                         break;
@@ -697,11 +779,11 @@ namespace Tinka.Translator
                     {
                         var op = new ElNode
                         {
-                            Left = node as IdentifierNode,
+                            Left = node as ExpressionNode,
                             Right = GetCompareNode(tokens, ref index),
                         };
 
-                        if (op.Left == null || op.Right == null)
+                        if (op.Left == null || !(op.Left is IdentifierNode || op.Left.Operator == TokenType.ARRAY_SIGN) || op.Right == null)
                         {
                             throw new ApplicationException($"Invalid arguments: {token.Type}(Left: {op.Left}, Right: {op.Right})");
                         }
@@ -716,10 +798,10 @@ namespace Tinka.Translator
                         var op = new EksaNode
                         {
                             Left = node,
-                            Right = GetCompareNode(tokens, ref index) as IdentifierNode,
+                            Right = GetCompareNode(tokens, ref index) as ExpressionNode,
                         };
 
-                        if (op.Left == null || op.Right == null)
+                        if (op.Left == null || (op.Right is IdentifierNode || op.Right.Operator == TokenType.ARRAY_SIGN) || op.Right == null)
                         {
                             throw new ApplicationException($"Invalid arguments: {token.Type}(Left: {op.Left}, Right: {op.Right})");
                         }
@@ -906,7 +988,7 @@ namespace Tinka.Translator
 
         private ExpressionNode GetTermNode(IList<Token> tokens, ref int index)
         {
-            ExpressionNode node = GetMono(tokens, ref index);
+            ExpressionNode node = GetMonoNode(tokens, ref index);
             int count = tokens.Count;
 
             while (index < count)
@@ -923,7 +1005,7 @@ namespace Tinka.Translator
                             {
                                 Operator = token.Type,
                                 Left = node,
-                                Right = GetMono(tokens, ref index),
+                                Right = GetMonoNode(tokens, ref index),
                             };
 
                             if (op.Right == null || (op.Left == null && op.Right != null))
@@ -944,7 +1026,7 @@ namespace Tinka.Translator
             return node;
         }
 
-        private ExpressionNode GetMono(IList<Token> tokens, ref int index)
+        private ExpressionNode GetMonoNode(IList<Token> tokens, ref int index)
         {
             ExpressionNode node = null;
             int count = tokens.Count;
@@ -964,7 +1046,7 @@ namespace Tinka.Translator
                             };
 
                             index++;
-                            op.Value = GetValueNode(tokens, ref index);
+                            op.Value = GetArrayPosNode(tokens, ref index);
 
                             if (op.Value == null)
                             {
@@ -981,12 +1063,51 @@ namespace Tinka.Translator
                     case TokenType.IDENTIFIER:
                         if(node is null)
                         {
-                            return GetValueNode(tokens, ref index);
+                            return GetArrayPosNode(tokens, ref index);
                         }
                         else
                         {
                             throw new ApplicationException($"Invalid arguments: {token.Type}");
                         }
+                    default:
+                        return node;
+                }
+            }
+
+            return node;
+        }
+
+        private ExpressionNode GetArrayPosNode(IList<Token> tokens, ref int index)
+        {
+            ExpressionNode node = GetValueNode(tokens, ref index);
+            int count = tokens.Count;
+
+            while (index < count)
+            {
+                Token token = tokens[index];
+
+                switch (token.Type)
+                {
+                    case TokenType.ARRAY_SIGN:
+                        index++;
+                        {
+                            var op = new BiOperatorNode
+                            {
+                                Operator = token.Type,
+                                Left = node,
+                                Right = GetValueNode(tokens, ref index),
+                            };
+
+                            if (op.Right == null || ((op.Left == null || op.Left is ConstantNode) && op.Right != null))
+                            {
+                                throw new ApplicationException($"Invalid arguments: {token.Type}(Left: {op.Left}, Right: {op.Right})");
+                            }
+                            else
+                            {
+                                node = op;
+                            }
+                        }
+                        break;
                     default:
                         return node;
                 }

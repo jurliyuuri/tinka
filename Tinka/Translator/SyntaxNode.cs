@@ -12,6 +12,8 @@ namespace Tinka.Translator
 
     public abstract class ExpressionNode : SyntaxNode
     {
+        public TokenType Operator { get; set; }
+
         protected ExpressionNode() : base()
         {
         }
@@ -89,26 +91,61 @@ namespace Tinka.Translator
     {
         public IdentifierNode Name { get; set; }
         public ExpressionNode Expression { get; set; }
+        public ConstantNode Length { get; set; }
 
         public AnaxNode() : base()
+        {
+            Length = new ConstantNode
+            {
+                Value = "1",
+            };
+        }
+
+        public override string ToString()
+        {
+            string expression = this.Expression == null ? "null" : this.Expression.ToString();
+            
+            return $"Anax(Name: {this.Name}, Expression: {expression}, Length: {this.Length})";
+        }
+    }
+
+    public abstract class ControlNode : SyntaxNode
+    {
+        public ExpressionNode CompareExpression { get; set; }
+        public IList<SyntaxNode> Syntaxes { get; set; }
+    }
+
+    public class FiNode : ControlNode
+    {
+        public FiNode() : base()
         {
         }
 
         public override string ToString()
         {
-            if (this.Expression == null)
-            {
-                return $"Anax(Name: {this.Name}, Code: null)";
-            }
-            else {
-                return $"Anax(Name: {this.Name}, Code: {this.Expression})";
-            }
+            string syntaxes = this.Syntaxes == null ? "" : string.Join(", ", this.Syntaxes.Select(x => x.ToString()));
+
+            return $"Fi(CompareExpression: {this.CompareExpression}, Syntaxes: [{syntaxes}])";
+        }
+    }
+
+    public class FalNode : ControlNode
+    {
+        public FalNode() : base()
+        {
+        }
+
+        public override string ToString()
+        {
+            string syntaxes = this.Syntaxes == null ? "" : string.Join(", ", this.Syntaxes.Select(x => x.ToString()));
+
+            return $"Fal(CompareExpression: {this.CompareExpression}, Syntaxes: [{syntaxes}])";
         }
     }
 
     public class ElNode : SyntaxNode
     {
-        public IdentifierNode Left { get; set; }
+        public ExpressionNode Left { get; set; }
         public ExpressionNode Right { get; set; }
 
         public ElNode() : base()
@@ -124,7 +161,7 @@ namespace Tinka.Translator
     public class EksaNode : SyntaxNode
     {
         public ExpressionNode Left { get; set; }
-        public IdentifierNode Right { get; set; }
+        public ExpressionNode Right { get; set; }
 
         public EksaNode() : base()
         {
@@ -138,7 +175,6 @@ namespace Tinka.Translator
 
     public class BiOperatorNode : ExpressionNode
     {
-        public TokenType Operator { get; set; }
         public ExpressionNode Left { get; set; }
         public ExpressionNode Right { get; set; }
 
@@ -154,7 +190,6 @@ namespace Tinka.Translator
 
     public class MonoOperatorNode : ExpressionNode
     {
-        public TokenType Operator { get; set; }
         public ExpressionNode Value { get; set; }
 
         public MonoOperatorNode() : base()

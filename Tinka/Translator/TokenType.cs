@@ -22,7 +22,7 @@ namespace Tinka.Translator
         L_CIRC,
         VARIABLE_SIGN,
         COMMA,
-        COLON,
+        ARRAY_SIGN,
 
         INTEGER,
         CHARACTER,
