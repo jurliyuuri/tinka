@@ -83,16 +83,20 @@ namespace Tinka.Translator
             this.writer.WriteLine("nll {0} ; cersva {0}", node.Name.Value);
             this.writer.WriteLine("nta 4 f5 krz f3 f5@ ; allocate variables");
             this.writer.WriteLine("krz f5 f3");
-
-            // TODO: Argumentsの処理を追加する
-
             this.writer.WriteLine("nta {0} f5", stackCount * 4);
 
-            int count = 0;
-            for (int i = 0; i < anaxList.Count; i++)
+            // 引数の設定
+            int count = node.Arguments.Count;
+            foreach (var anax in node.Arguments)
             {
-                AnaxNode anax = anaxList[i];
-                
+                anaxDictionary.Add(anax.Name, (uint)((count + 1) * 4));
+                count--;
+            }
+
+            // 内部変数の設定
+            count = 0;
+            foreach (var anax in anaxList)
+            {
                 count += int.Parse(anax.Length.Value);
                 anaxDictionary.Add(anax.Name, (uint)(-count * 4));
                 ToAnax(anax, anaxDictionary);

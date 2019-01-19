@@ -564,7 +564,7 @@ namespace Tinka.Translator
             {
                 string name = (token as Identifier).Name;
 
-                if (name.All(char.IsDigit))
+                if (name.All(char.IsDigit) && char.IsDigit((name ?? "0").FirstOrDefault()))
                 {
                     throw new ApplicationException($"Invalid identifier: cersva {name}");
                 }
@@ -589,9 +589,10 @@ namespace Tinka.Translator
                 throw new ApplicationException($"Not found '(': cersva {cersvaNode.Name.Value}");
             }
 
-            // TODO: Argumentsの処理を追加する
+            index++;
+            cersvaNode.Arguments = GetArguments(tokens, ref index);
 
-            token = tokens[++index];
+            token = tokens[index];
             if (token.Type != TokenType.R_CIRC)
             {
                 throw new ApplicationException($"Not found ')': cersva {cersvaNode.Name.Value}");
@@ -615,6 +616,69 @@ namespace Tinka.Translator
             return cersvaNode;
         }
 
+        private List<AnaxNode> GetArguments(IList<Token> tokens, ref int index)
+        {
+            List<AnaxNode> anaxNodeList = new List<AnaxNode>();
+            int count = tokens.Count;
+
+            if (tokens[index].Type == TokenType.R_CIRC)
+            {
+                return anaxNodeList;
+            }
+
+            while (index < count)
+            {
+                AnaxNode anaxNode = new AnaxNode();
+                Token token = tokens[index];
+                if (token is Identifier)
+                {
+                    string name = (token as Identifier).Name;
+
+                    if (name.All(char.IsDigit) && char.IsDigit((name ?? "0").FirstOrDefault()))
+                    {
+                        throw new ApplicationException($"Invalid identifier: anax {name}");
+                    }
+                    else
+                    {
+                        anaxNode.Name = new IdentifierNode
+                        {
+                            Value = name
+                        };
+
+                        anaxNodeList.Add(anaxNode);
+                    }
+                }
+                else
+                {
+                    throw new ApplicationException($"Invalid value: anax {token}");
+                }
+
+                index++;
+                if (index < count)
+                {
+                    token = tokens[index];
+
+                    if(token.Type == TokenType.COMMA)
+                    {
+                        index++;
+                    }
+                    else if(token.Type == TokenType.R_CIRC) {
+                        break;
+                    }
+                    else
+                    {
+                        throw new ApplicationException($"Invalid value: {token}");
+                    }
+                }
+                else
+                {
+                    throw new ApplicationException($"End of file in {anaxNode}");
+                }
+            }
+
+            return anaxNodeList;
+        }
+
         private AnaxNode GetAnaxNode(IList<Token> tokens, ref int index)
         {
             AnaxNode anaxNode = new AnaxNode();
@@ -625,7 +689,7 @@ namespace Tinka.Translator
             {
                 string name = (token as Identifier).Name;
 
-                if(name.All(char.IsDigit))
+                if (name.All(char.IsDigit) && char.IsDigit((name ?? "0").FirstOrDefault()))
                 {
                     throw new ApplicationException($"Invalid identifier: anax {name}");
                 }
