@@ -1,0 +1,17 @@
+-- 配列
+-- 現在のところ#f:#pまでのみの対応
+
+cersva fasal ()
+rinyv
+    anax p
+    anax f:5
+
+    #p el 1
+    #f:0 el 2
+    #f:#p el 3
+    #f:2 el 4
+    #f:3 el 5
+    #f:4 el 6
+
+    dosnud 0
+situv

@@ -10,9 +10,13 @@ namespace Tinka.Translator
     public class TinkaTo2003lk : Compiler
     {
         private StreamWriter writer;
+        private int cersvaStackCount;
+        private int blockCount;
 
         public TinkaTo2003lk() : base()
         {
+            cersvaStackCount = 0;
+            blockCount = 0;
         }
 
         protected override void Preprocess(Stream stream)
@@ -26,8 +30,7 @@ namespace Tinka.Translator
             this.writer.WriteLine("nta 4 f5 krz f2 f5@ ; (global) allocate variables");
             this.writer.WriteLine("krz f5 f2");
             this.writer.WriteLine("nta {0} f5", stackCount * 4);
-
-
+            
             for (int i = 0; i < globalAnaxNode.Count; i++)
             {
                 AnaxNode anax = globalAnaxNode[i];
@@ -75,35 +78,38 @@ namespace Tinka.Translator
             var anaxDictionary = new Dictionary<IdentifierNode, uint>();
             int stackCount = anaxList.Select(x => int.Parse(x.Length.Value)).Sum();
 
+            cersvaStackCount = stackCount;
+
             this.writer.WriteLine("nll {0} ; cersva {0}", node.Name.Value);
             this.writer.WriteLine("nta 4 f5 krz f3 f5@ ; allocate variables");
             this.writer.WriteLine("krz f5 f3");
-            this.writer.WriteLine("nta {0} f5", stackCount * 4);
 
             // TODO: Argumentsの処理を追加する
 
+            this.writer.WriteLine("nta {0} f5", stackCount * 4);
+
+            int count = 0;
             for (int i = 0; i < anaxList.Count; i++)
             {
                 AnaxNode anax = anaxList[i];
-
-                if (this.globalVariables.ContainsKey(anax.Name))
-                {
-                    throw new ApplicationException($"Duplication variable name: {anax.Name}");
-                }
-
-                anaxDictionary.Add(anax.Name, (uint)(-stackCount * 4));
+                
+                count += int.Parse(anax.Length.Value);
+                anaxDictionary.Add(anax.Name, (uint)(-count * 4));
                 ToAnax(anax, anaxDictionary);
-
-                stackCount -= int.Parse(anax.Length.Value);
             }
 
             OutputSyntax(node.Syntaxes, anaxDictionary);
             this.writer.WriteLine();
+
+            this.cersvaStackCount = 0;
         }
 
         protected override void ToDosnud(DosnudNode node, IDictionary<IdentifierNode, uint> anaxDictionary)
         {
-            OutputExpression(node.Expression, "f0", anaxDictionary);
+            if(node.Expression != null)
+            {
+                OutputExpression(node.Expression, "f0", anaxDictionary);
+            }
 
             this.writer.WriteLine("krz f3 f5 ; restore stack poiter");
             this.writer.WriteLine("krz f5@ f3 ata 4 f5");
@@ -138,12 +144,86 @@ namespace Tinka.Translator
 
         protected override void ToFi(FiNode node, IDictionary<IdentifierNode, uint> anaxDictionary)
         {
+            // 内部で使用する変数領域の確保
+            var anaxList = node.Syntaxes.Where(x => x is AnaxNode)
+                .Select(x => (x as AnaxNode)).ToList();
+            int stackCount = anaxList.Select(x => int.Parse(x.Length.Value)).Sum();
+            int block = this.blockCount++;
 
+            this.writer.WriteLine("nta {0} f5 ; allocate variables in fi", stackCount * 4);
+
+            // 条件式
+            OutputExpression(node.CompareExpression, "f0", anaxDictionary);
+            this.writer.WriteLine("fi f0 0 clo malkrz --fi-{0}-- xx ; rinyv fi", block);
+
+            int count = 0;
+            for (int i = 0; i < anaxList.Count; i++)
+            {
+                AnaxNode anax = anaxList[i];
+
+                if (anaxDictionary.ContainsKey(anax.Name))
+                {
+                    throw new ApplicationException($"Duplication variable name: {anax.Name} in fi");
+                }
+
+                count += int.Parse(anax.Length.Value);
+                anaxDictionary.Add(anax.Name, (uint)(-(this.cersvaStackCount + count) * 4));
+                ToAnax(anax, anaxDictionary);
+            }
+
+            // 文の処理
+            OutputSyntax(node.Syntaxes, anaxDictionary);
+
+            // 内部で使用した変数領域の解放
+            foreach (var anax in anaxList)
+            {
+                anaxDictionary.Remove(anax.Name);
+            }
+
+            this.writer.WriteLine("nll --fi-{0}-- ata {1} f5 ; situv fi", block, stackCount * 4);
         }
 
         protected override void ToFal(FalNode node, IDictionary<IdentifierNode, uint> anaxDictionary)
         {
+            // 内部で使用する変数領域の確保
+            var anaxList = node.Syntaxes.Where(x => x is AnaxNode)
+                .Select(x => (x as AnaxNode)).ToList();
+            int stackCount = anaxList.Select(x => int.Parse(x.Length.Value)).Sum();
+            int block = this.blockCount++;
+            
+            this.writer.WriteLine("nta {0} f5 ; allocate variables in fal", stackCount * 4);
 
+            // 条件式
+            this.writer.WriteLine("nll --fal-rinyv-{0}--", block);
+            OutputExpression(node.CompareExpression, "f0", anaxDictionary);
+            this.writer.WriteLine("fi f0 0 clo malkrz --fal-situv-{0}-- xx ; rinyv fal", block);
+
+            int count = 0;
+            for (int i = 0; i < anaxList.Count; i++)
+            {
+                AnaxNode anax = anaxList[i];
+
+                if (anaxDictionary.ContainsKey(anax.Name))
+                {
+                    throw new ApplicationException($"Duplication variable name: {anax.Name} in fal");
+                }
+
+                count += int.Parse(anax.Length.Value);
+                anaxDictionary.Add(anax.Name, (uint)(-(this.cersvaStackCount + count) * 4));
+                ToAnax(anax, anaxDictionary);
+            }
+
+            // 文の処理
+            OutputSyntax(node.Syntaxes, anaxDictionary);
+
+            // 内部で使用した変数領域の解放
+            foreach (var anax in anaxList)
+            {
+                anaxDictionary.Remove(anax.Name);
+            }
+
+            this.writer.WriteLine("krz --fal-rinyv-{0}-- xx", block);
+            this.writer.WriteLine("nll --fal-situv-{0}-- ata {1} f5 ; situv fal", block, stackCount * 4);
         }
 
         protected override void ToEl(ExpressionNode left, ExpressionNode right, IDictionary<IdentifierNode, uint> anaxDictionary)
@@ -526,6 +606,7 @@ namespace Tinka.Translator
         protected override void ToFenxe(FenxeNode fenxe, string register, IDictionary<IdentifierNode, uint> anaxDictionary)
         {
             int count = ((fenxe.Arguments?.Count ?? 0) + 1) * 4;
+
             // TODO: Argumentsの前処理を行う
             
             if(register != "f0")

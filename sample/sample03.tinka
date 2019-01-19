@@ -1,0 +1,25 @@
+-- 制御文 fi
+
+cersva fasal ()
+rinyv
+    anax p el 2
+    anax f el 1
+    anax v el 0
+
+    fi #p xylo #f
+    rinyv
+        -- このfiのスコープ内で使用可能な変数を定義可能
+        -- 変数名はローカル変数と同一のものは使用不可
+        anax k el 10
+        10 eksa #v
+    situv
+
+    fi #p xolo #f
+    rinyv
+        -- スコープが違うので先のfi内で定義した変数名と同一のものが使用可能
+        anax k el 21
+        21 eksa #v
+    situv
+
+    dosnud 0
+situv

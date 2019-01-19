@@ -1,0 +1,18 @@
+-- 繰り返し構文 fal
+
+cersva fasal ()
+rinyv
+    anax p el 0
+    anax f el 1
+
+    fal #f xylo 10
+    rinyv
+        -- このfalのスコープ内で使用可能な変数を定義可能
+        -- 変数名はローカル変数と同一のものは使用不可
+        anax k el #p
+        #p el #p + #f
+        #f el #f + 1
+    situv
+
+    dosnud 0
+situv

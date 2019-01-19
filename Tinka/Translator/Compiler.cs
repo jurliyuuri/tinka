@@ -712,6 +712,8 @@ namespace Tinka.Translator
                 throw new ApplicationException($"Not found 'situv': fi {controlNode.CompareExpression}");
             }
 
+            index++;
+
             return controlNode;
         }
 
@@ -801,7 +803,7 @@ namespace Tinka.Translator
                             Right = GetCompareNode(tokens, ref index) as ExpressionNode,
                         };
 
-                        if (op.Left == null || (op.Right is IdentifierNode || op.Right.Operator == TokenType.ARRAY_SIGN) || op.Right == null)
+                        if (op.Left == null || !(op.Right is IdentifierNode || op.Right.Operator == TokenType.ARRAY_SIGN) || op.Right == null)
                         {
                             throw new ApplicationException($"Invalid arguments: {token.Type}(Left: {op.Left}, Right: {op.Right})");
                         }
@@ -1095,7 +1097,7 @@ namespace Tinka.Translator
                             {
                                 Operator = token.Type,
                                 Left = node,
-                                Right = GetValueNode(tokens, ref index),
+                                Right = GetArrayPosNode(tokens, ref index),
                             };
 
                             if (op.Right == null || ((op.Left == null || op.Left is ConstantNode) && op.Right != null))
