@@ -1,0 +1,15 @@
+-- 関数定義と呼び出し
+
+cersva fasal ()
+rinyv
+    anax p el 10
+    #p el test(4 + #p lat 2, 2, 1)
+    dosnud 0
+situv
+
+cersva test (s, t, u)
+rinyv
+    anax p
+    #p el #s + #t | #u
+    dosnud #p
+situv

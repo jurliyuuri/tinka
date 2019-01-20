@@ -557,11 +557,11 @@ namespace Tinka.Translator
             if (right is IdentifierNode || right is ConstantNode)
             {
                 OutputValue(right, "f1", anaxDictionary);
-                this.writer.WriteLine("nta 4 f5 krz 0 f5@ ; allocate temporary");
+                this.writer.WriteLine("nta 4 f5 krz 0 f5@ ; allocate temporary at compare");
             }
             else
             {
-                this.writer.WriteLine("nta 4 f5 krz f0 f5@ ; allocate temporary");
+                this.writer.WriteLine("nta 4 f5 krz f0 f5@ ; allocate temporary at compare");
                 OutputExpression(right, "f0", anaxDictionary);
                 this.writer.WriteLine("inj f5@ f0 f1 krz 0 f5@");
             }
@@ -609,16 +609,23 @@ namespace Tinka.Translator
 
         protected override void ToFenxe(FenxeNode fenxe, string register, IDictionary<IdentifierNode, uint> anaxDictionary)
         {
-            int count = ((fenxe.Arguments?.Count ?? 0) + 1) * 4;
-
-            // TODO: Argumentsの前処理を行う
-            
-            if(register != "f0")
+            if (register != "f0")
             {
                 this.writer.WriteLine("nta 4 f5 krz f0 f5@");
             }
 
-            this.writer.WriteLine("nta 4 f5 inj {0} xx f5@ ata {1} f5", fenxe.Name.Value, count);
+            int count = ((fenxe.Arguments?.Count ?? 0) + 1) * 4;
+            this.writer.WriteLine("nta {0} f5 ; allocate arguments stack", count);
+
+            int argCount = count;
+            foreach (var arg in fenxe.Arguments)
+            {
+                count -= 4;
+                OutputExpression(arg, "f0", anaxDictionary);
+                this.writer.WriteLine("krz f0 f5+{0}@ ; push argument", count);
+            }
+
+            this.writer.WriteLine("inj {0} xx f5@ ata {1} f5", fenxe.Name.Value, count);
             if(register != "f0")
             {
                 this.writer.WriteLine("krz f0 {0} krz f5@ f0 ata 4 f5", register);

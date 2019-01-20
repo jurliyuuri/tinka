@@ -128,14 +128,14 @@ namespace Tinka.Translator
                 }
             }
         }
-        
+
         protected void OutputExpression(ExpressionNode expression, string register, IDictionary<IdentifierNode, uint> anaxDictionary)
         {
             if (expression is MonoOperatorNode)
             {
                 var monoop = expression as MonoOperatorNode;
 
-                switch(monoop.Operator)
+                switch (monoop.Operator)
                 {
                     case TokenType.SNA:
                         ToSna(monoop.Value, anaxDictionary);
@@ -145,7 +145,7 @@ namespace Tinka.Translator
                         break;
                     default:
                         throw new ApplicationException($"Unknown MonoOperandNode: {monoop.Operator}");
-                } 
+                }
             }
             else if (expression is BiOperatorNode)
             {
@@ -211,6 +211,10 @@ namespace Tinka.Translator
             else if (expression is ConstantNode)
             {
                 ToConstant(expression as ConstantNode, register);
+            }
+            else if (expression is FenxeNode)
+            {
+                ToFenxe(expression as FenxeNode, register, anaxDictionary);
             }
             else
             {
@@ -1228,7 +1232,8 @@ namespace Tinka.Translator
                 Name = new IdentifierNode
                 {
                     Value = (identifier as Identifier).Name,
-                }
+                },
+                Arguments = new List<ExpressionNode>(),
             };
 
             Token token = tokens[++index];
@@ -1236,10 +1241,38 @@ namespace Tinka.Translator
             {
                 throw new ApplicationException($"Not found '(': fenxe {fenxe.Name.Value}");
             }
-
-            // TODO: Argumentsの処理を追加する
-
+            
+            int count = tokens.Count;
             token = tokens[++index];
+            while (index < count && token.Type != TokenType.R_CIRC)
+            {
+                ExpressionNode expression = GetCompareNode(tokens, ref index);
+
+                if(expression != null)
+                {
+                    fenxe.Arguments.Add(expression);
+                }
+                else
+                {
+                    throw new ApplicationException($"Invalid token: {token}");
+                }
+
+                token = tokens[index];
+
+                if (token.Type == TokenType.R_CIRC)
+                {
+                    break;
+                }
+                else if (token.Type == TokenType.COMMA)
+                {
+                    index++;
+                }
+                else
+                {
+                    throw new ApplicationException($"Invalid token: {token}");
+                }
+            }
+
             if (token.Type != TokenType.R_CIRC)
             {
                 throw new ApplicationException($"Not found ')': fenxe {fenxe.Name.Value}");
