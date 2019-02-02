@@ -375,6 +375,7 @@ namespace Tinka.Translator
                 switch (word)
                 {
                     case "xok":
+                    case "kue":
                     case "cersva":
                     case "dosnud":
                     case "anax":
@@ -801,11 +802,6 @@ namespace Tinka.Translator
                         index++;
                         node = GetCompareNode(tokens, ref index);
 
-                        if(node is null)
-                        {
-                            index--;
-                        }
-
                         node = new DosnudNode
                         {
                             Expression = node as ExpressionNode,
@@ -944,9 +940,9 @@ namespace Tinka.Translator
 
                 switch (token.Type)
                 {
-                    case TokenType.DTO:
-                    case TokenType.DTOSNA:
-                    case TokenType.DRO:
+                    case TokenType.ADA:
+                    case TokenType.EKC:
+                    case TokenType.DAL:
                         index++;
                         {
                             var op = new BiOperatorNode
@@ -1101,7 +1097,7 @@ namespace Tinka.Translator
             ExpressionNode node = null;
             int count = tokens.Count;
 
-            while (index < count)
+            if (index < count)
             {
                 Token token = tokens[index];
 
@@ -1131,14 +1127,7 @@ namespace Tinka.Translator
                     case TokenType.INTEGER:
                     case TokenType.VARIABLE_SIGN:
                     case TokenType.IDENTIFIER:
-                        if(node is null)
-                        {
-                            return GetArrayPosNode(tokens, ref index);
-                        }
-                        else
-                        {
-                            throw new ApplicationException($"Invalid arguments: {token.Type}");
-                        }
+                        return GetArrayPosNode(tokens, ref index);
                     default:
                         return node;
                 }
