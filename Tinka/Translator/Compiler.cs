@@ -375,6 +375,7 @@ namespace Tinka.Translator
                 switch (word)
                 {
                     case "xok":
+                    case "kue":
                     case "cersva":
                     case "dosnud":
                     case "anax":
