@@ -802,11 +802,6 @@ namespace Tinka.Translator
                         index++;
                         node = GetCompareNode(tokens, ref index);
 
-                        if(node is null)
-                        {
-                            index--;
-                        }
-
                         node = new DosnudNode
                         {
                             Expression = node as ExpressionNode,
