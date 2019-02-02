@@ -1097,7 +1097,7 @@ namespace Tinka.Translator
             ExpressionNode node = null;
             int count = tokens.Count;
 
-            while (index < count)
+            if (index < count)
             {
                 Token token = tokens[index];
 
@@ -1127,14 +1127,7 @@ namespace Tinka.Translator
                     case TokenType.INTEGER:
                     case TokenType.VARIABLE_SIGN:
                     case TokenType.IDENTIFIER:
-                        if(node is null)
-                        {
-                            return GetArrayPosNode(tokens, ref index);
-                        }
-                        else
-                        {
-                            throw new ApplicationException($"Invalid arguments: {token.Type}");
-                        }
+                        return GetArrayPosNode(tokens, ref index);
                     default:
                         return node;
                 }
