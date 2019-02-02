@@ -945,9 +945,9 @@ namespace Tinka.Translator
 
                 switch (token.Type)
                 {
-                    case TokenType.DTO:
-                    case TokenType.DTOSNA:
-                    case TokenType.DRO:
+                    case TokenType.ADA:
+                    case TokenType.EKC:
+                    case TokenType.DAL:
                         index++;
                         {
                             var op = new BiOperatorNode
