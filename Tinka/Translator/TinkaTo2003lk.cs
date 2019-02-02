@@ -311,7 +311,7 @@ namespace Tinka.Translator
             {
                 var biop = right as BiOperatorNode;
 
-                if(!(biop.Right is IdentifierNode))
+                if(!(biop.Left is IdentifierNode))
                 {
                     throw new ApplicationException($"Invalid operation: {biop.Right}");
                 }
