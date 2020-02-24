@@ -20,6 +20,7 @@ namespace Tinka.Translator
 
         public Identifier() : base()
         {
+            Name = string.Empty;
             Type = TokenType.IDENTIFIER;
         }
 
@@ -35,6 +36,7 @@ namespace Tinka.Translator
 
         public Integer() : base()
         {
+            Value = string.Empty;
             Type = TokenType.INTEGER;
         }
         

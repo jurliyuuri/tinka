@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Tinka.Translator;
 
 namespace Tinka
@@ -16,7 +14,7 @@ namespace Tinka
                 if (args.Length > 0)
                 {
                     var outFileOptionIndex = Array.IndexOf(args, "-o");
-                    Compiler compiler;
+                    TinkaTranscompiler compiler;
 
                     if (outFileOptionIndex == -1)
                     {
@@ -24,7 +22,7 @@ namespace Tinka
                         }
                         else
                         {
-                            compiler = GetCompiler(args.ToList());
+                            compiler = GetTranspiler(args.ToList());
                             compiler.Output("a.lk");
                         }
                     }
@@ -39,7 +37,7 @@ namespace Tinka
                         var outFileIndex = outFileOptionIndex + 1;
                         var inFiles = args.Where((x, i) => i != outFileOptionIndex && i != outFileIndex).ToList();
 
-                        compiler = GetCompiler(inFiles);
+                        compiler = GetTranspiler(inFiles);
                         compiler.Output(args[outFileIndex]);
                     }
                 }
@@ -57,20 +55,21 @@ namespace Tinka
             }
         }
 
-        private static Compiler GetCompiler(List<string> inFileNames)
+        private static TinkaTranscompiler GetTranspiler(List<string> inFileNames)
         {
-            Compiler compiler = null;
+            TinkaTranscompiler compiler;
             List<string> list = inFileNames.Where(x => x != "-l").ToList();
 
             if (inFileNames.Any(x => x == "--lua64"))
             {
+                compiler = new TinkaTo2003lk();
             }
             else
             {
                 compiler = new TinkaTo2003lk();
             }
 
-            compiler?.Input(list);
+            compiler.Input(list);
             return compiler;
         }
     }
